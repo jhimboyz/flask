@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<nav class="sidebar navbar-light bg-light d-flex flex-column">
+    <a class="navbar-brand" href="#">
+        <img src="{{ url_for('static', filename='ASIA.png') }}" alt="asia-logo" class="asia-logo">
+    </a>
+
+    <div class="d-flex align-items-center text-black mb-5 p-3 border-bottom border-secondary" style="margin-top: -25%;">
+        <i class="fas fa-user-shield" style="margin-right: 8px; font-size: 1.5rem;"></i>
+        <span class="link-text">{{ user.first_name }}</span>
+    </div>
+
+    <div class="container-fluid d-flex flex-column">
+        <div class="navbar-collapse" id="navbar">
+            <ul class="navbar-nav flex-column mb-auto">
+                <li class="nav-item {% if request.path == '/' %}active{% endif %}">
+                    <a class="nav-link" id="home" href="/"><i class="fas fa-home" style="margin-right: 4px;"></i>
+                        <span class="link-text">Home</span></a>
+                </li>
+                <div class="nav-divider"></div>
+                <li class="nav-item {% if request.path == '/controlPanel' %}active{% endif %}">
+                    <a class="nav-link" id="controlPanel" href="/controlPanel"><i class="fas fa-history"
+                            style="margin-right: 10px;"></i><span class="link-text">History</span></a>
+                </li>
+                <div class="nav-divider"></div>
+                <li class="nav-item {% if request.path == '/settings' %}active{% endif %}">
+                    <a class="nav-link" id="settings" href="/settings"><i class="fas fa-cog"
+                            style="margin-right: 4px;"></i><span class="link-text">Settings</span></a>
+                </li>
+            </ul>
+            <ul style="list-style: none; padding-left: 0;">
+                <li class="nav-item {% if request.path == '/logout' %}active{% endif %}"
+                    style="margin-top: 30%; margin-left: 8%;">
+                    <button class="nav-link btn btn-outline-danger" type="button" id="logout"
+                        style="color: red; margin-right: 25px" onclick="window.location.href='/logout'">
+                        <i class="fas fa-sign-out-alt" style="margin-right: 4px; color: red;"></i><span
+                            class="link-text">Logout</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container">
+            <div id="whiteboxx" style="margin-top: -33%; height: 110%; margin-left: 10%; width: 97%;">
+            <div id="greyboxx"></div>
+            <div id="whiteboxx" style="margin-top: -26%; height: 75%; width: 70%; margin-left: 15%;">
+            <div class="row">
+                <div class="col-lg-8 offset-lg-2">
+                    <form method="POST">
+                        <div class="form-group mb-3" style="margin-top: 5%">
+                            <label for="email"><strong>Email</strong></label>
+                            <input type="email" name="email" id="email" class="form-control" value="{{ user.email }}" required>
+                        </div>x
+                        <div class="form-group mb-3">
+                            <label for="firstName"><strong>Name</strong></label>
+                            <input type="text" name="firstName" id="firstName" class="form-control" value="{{ user.first_name }}"
+                                required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="password1"><strong>New Password</strong></label>
+                            <input type="password" name="password1" id="password1" class="form-control"
+                                placeholder="Enter Password">
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="password2"><strong>Confirm New Password</strong></label>
+                            <input type="password" name="password2" id="password2" class="form-control"
+                                placeholder="Confirm Password">
+                        </div>
+                        <div class="login-button">
+                            <button type="submit" style="margin-bottom: 15px; border-radius: 20px; width: 60%;">Update</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            </div>
+    </div>
+</div>
+
+
+
+{% endblock %}

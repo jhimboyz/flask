@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Control Panel{% endblock %}
+
+{% block content %}
+
+<nav class="sidebar navbar-light bg-light d-flex flex-column">
+    <a class="navbar-brand" href="#">
+        <img src="{{ url_for('static', filename='ASIA.png') }}" alt="asia-logo" class="asia-logo">
+    </a>
+
+    <div class="d-flex align-items-center text-black mb-5 p-3 border-bottom border-secondary" style="margin-top: -25%;">
+        <i class="fas fa-user-shield" style="margin-right: 8px; font-size: 1.5rem;"></i>
+        <span class="link-text">{{ user.first_name }}</span>
+    </div>
+
+    <div class="container-fluid d-flex flex-column">
+        <div class="navbar-collapse" id="navbar">
+            <ul class="navbar-nav flex-column mb-auto">
+                <li class="nav-item {% if request.path == '/' %}active{% endif %}">
+                    <a class="nav-link" id="home" href="/"><i class="fas fa-home" style="margin-right: 4px;"></i>
+                        <span class="link-text">Home</span></a>
+                </li>
+                <div class="nav-divider"></div>
+                <li class="nav-item {% if request.path == '/controlPanel' %}active{% endif %}">
+                    <a class="nav-link" id="controlPanel" href="/controlPanel"><i class="fas fa-history"
+                            style="margin-right: 10px;"></i><span class="link-text">History</span></a>
+                </li>
+                <div class="nav-divider"></div>
+                <li class="nav-item {% if request.path == '/settings' %}active{% endif %}">
+                    <a class="nav-link" id="settings" href="/settings"><i class="fas fa-cog"
+                            style="margin-right: 4px;"></i><span class="link-text">Settings</span></a>
+                </li>
+            </ul>
+            <ul style="list-style: none; padding-left: 0;">
+                <li class="nav-item {% if request.path == '/logout' %}active{% endif %}"
+                    style="margin-top: 30%; margin-left: 8%;">
+                    <button class="nav-link btn btn-outline-danger" type="button" id="logout"
+                        style="color: red; margin-right: 25px" onclick="window.location.href='/logout'">
+                        <i class="fas fa-sign-out-alt" style="margin-right: 4px; color: red;"></i><span
+                            class="link-text">Logout</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+<div class="container">
+    <div id="whiteboxx" style="margin-top: 3%; margin-bottom: auto;">
+
+        <div id="forecast-graph" style="margin-top: 10%;"></div>
+        <!-- Buttons for toggling forecast -->
+        <center><div class="btn-group mt-3">
+            <button class="btn btn-primary" onclick="loadForecast(7)">Next 7 Days</button>
+            <button class="btn btn-secondary" onclick="loadForecast(30)">Next 1 Month</button>
+        </div>
+        </center>
+
+        <div id="ReadingData">
+            <!-- Add a Download PDF Button -->
+            <div class="download-button" style="position: absolute; right: 3px; margin-right: 45px;">
+                <a href="http://127.0.0.1/sensorproj/data.php?download=pdf" class="mb-3">
+                    <i class="fas fa-download"></i> Report
+                </a>
+            </div>
+            <center>
+                <h4>Report Data</h4>
+            </center>
+            <table class="table table-bordered mt-3" id="readings-table">
+                <thead>
+                    <tr>
+                        <th>Distance (cm)</th>
+                        <th>Status</th>
+                        <th>Date & Time</th>
+                    </tr>
+                </thead>
+                <tbody id="readings-body">
+                    {% for reading in readings %}
+                    <tr>
+                        <td>{{ reading[0] }}</td>
+                        <td>{{ reading[1] }}</td>
+                        <td>{{ reading[2] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+
+    function fetchData() {
+        $.ajax({
+            url: "{{ url_for('views.get_distance') }}",  // Make sure the 'get_distance' route is correct in Flask
+            type: 'GET',
+            success: function (data) {
+                if (data.distance !== undefined && data.status !== undefined) {
+                    // Update distance and status dynamically
+                    $('#distance').text(data.distance);
+                    $('#status').text(data.status);
+                }
+
+                // Update the report data dynamically
+                let readingsTableBody = $('#readings-body');
+                readingsTableBody.empty();  // Clear the existing table data
+
+                // Ensure that `data.readings` exists and is an array
+                if (data.readings && Array.isArray(data.readings)) {
+                    $.each(data.readings, function (index, reading) {
+                        readingsTableBody.append(
+                            `<tr>
+                            <td>${reading.distance}</td>
+                            <td>${reading.status}</td>
+                            <td>${reading.datetime}</td>
+                        </tr>`
+                        );
+                    });
+                }
+            },
+            error: function (error) {
+                console.error('Error fetching data:', error);
+            }
+        });
+    }
+
+    // Fetch data every 2 seconds (2000 milliseconds)
+    setInterval(fetchData, 2000);
+
+     // Function to fetch and plot forecast data
+        function loadForecast(days) {
+            // Fetch data from the backend
+            $.get(`/forecast?days=${days}`, function (data) {
+                // Extract dates and predictions
+                const dates = data.map(item => item.date);
+                const predictions = data.map(item => item.prediction);
+
+                // Define the trace for the graph
+                const trace = {
+                    x: dates,
+                    y: predictions,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    marker: { color: 'blue' },
+                    line: { shape: 'linear' }
+                    // line: {
+                    //     color: 'royalblue', 
+                    //     width: 3,
+                    //     shape: 'spline',
+                    // },
+                    // fill: 'tozeroy',
+                    // fillcolor: 'rgba(135, 206, 250, 0.3)'
+                };  
+
+                // Define the layout for the graph
+                const layout = {
+                    title: `Forecast for the Next ${days} Days`,
+                    xaxis: { title: 'Date' },
+                    yaxis: { title: 'Prediction' },
+                    margin: { t: 40, b: 40 }
+                };
+
+                // Render the graph in the specified div
+                Plotly.newPlot('forecast-graph', [trace], layout);
+            });
+        }
+
+        // Load the default graph for the next 7 days on page load
+        $(document).ready(function () {
+            loadForecast(7);
+        });
+
+</script>
+
+{% endblock %}
+
+

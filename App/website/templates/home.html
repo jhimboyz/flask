@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<nav class="sidebar navbar-light bg-light d-flex flex-column">
+    <a class="navbar-brand" href="#">
+        <img src="{{ url_for('static', filename='ASIA.png') }}" alt="asia-logo" class="asia-logo">
+    </a>
+
+    <div class="d-flex align-items-center text-black mb-5 p-3 border-bottom border-secondary" style="margin-top: -25%;">
+        <i class="fas fa-user-shield" style="margin-right: 8px; font-size: 1.5rem;"></i>
+        <span class="link-text">{{ user.first_name }}</span>
+    </div>
+
+    <div class="container-fluid d-flex flex-column">
+        <div class="navbar-collapse" id="navbar">
+            <ul class="navbar-nav flex-column mb-auto">
+                <li class="nav-item {% if request.path == '/' %}active{% endif %}">
+                    <a class="nav-link" id="home" href="/"><i class="fas fa-home" style="margin-right: 4px;"></i>
+                        <span class="link-text">Home</span></a>
+                </li>
+                <div class="nav-divider"></div>
+                <li class="nav-item {% if request.path == '/controlPanel' %}active{% endif %}">
+                    <a class="nav-link" id="controlPanel" href="/controlPanel"><i class="fas fa-history"
+                            style="margin-right: 10px;"></i><span class="link-text">History</span></a>
+                </li>
+                <div class="nav-divider"></div>
+                <li class="nav-item {% if request.path == '/settings' %}active{% endif %}">
+                    <a class="nav-link" id="settings" href="/settings"><i class="fas fa-cog"
+                            style="margin-right: 4px;"></i><span class="link-text">Settings</span></a>
+                </li>
+            </ul>
+            <ul style="list-style: none; padding-left: 0;">
+                <li class="nav-item {% if request.path == '/logout' %}active{% endif %}"
+                    style="margin-top: 30%; margin-left: 8%;">
+                    <button class="nav-link btn btn-outline-danger" type="button" id="logout"
+                        style="color: red; margin-right: 25px" onclick="window.location.href='/logout'">
+                        <i class="fas fa-sign-out-alt" style="margin-right: 4px; color: red;"></i><span
+                            class="link-text">Logout</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div id="whiteboxx">
+        <h3 style="margin-top: 3%; margin-left: 4%;">Hello, {{ user.first_name }}</h3>
+
+        <!-- Display sensor data with dynamic distance and status -->
+        <div class="row gx-5">
+            <div class="col-lg-5 col-sm-11 col-md-7">
+                <div id="distanceM">
+                    <h2>Fuel Level Monitoring</h2>
+                    <p><strong>Distance:</strong> <span id="distance">{{ distance }}</span> cm</p>
+                    <p><strong>Status:</strong> <span id="status">{{ status }}</span></p>
+                </div>
+            </div>
+
+            <div class="col-lg-7 col-md-5">
+                <!-- Plotly graph section -->
+                <div id="distance-graph"></div>
+                <div class="edit-button text-center mt-3">
+                    <button id="edit-yaxis-btn" class="btn btn-primary" data-toggle="modal"
+                        data-target="#editYaxisModal">
+                        <i class="fas fa-edit"></i> Edit Distance
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Structure -->
+        <div class="modal fade" id="editYaxisModal" tabindex="-1" role="dialog" aria-labelledby="editYaxisModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editYaxisModalLabel">Edit Distance</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="yaxis-form">
+                            <div class="form-group">
+                                <label for="new-yaxis-max">Set Distance Value:</label>
+                                <input type="number" id="new-yaxis-max" class="form-control"
+                                    placeholder="Enter distance cm" required>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form to select date range -->
+        <div class="row mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Select a Time Range</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('views.home') }}">
+                        <div class="form-group">
+                            <select name="date_range" id="date_range" class="form-control" required>
+                                <option value="" disabled selected>....</option>
+                                <option value="today">Today</option>
+                                <option value="last_7_days">Last 7 Days</option>
+                                <option value="last_month">Last Month</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+                        <div id="custom-range" style="display:none;">
+                            <div class="form-group">
+                                <label for="start_date">Start Date:</label>
+                                <input type="date" name="start_date" id="start_date" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="end_date">End Date:</label>
+                                <input type="date" name="end_date" id="end_date" class="form-control">
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary mt-3">Show Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        
+
+        <!-- Graph Section -->
+        <div id="graph"></div>
+
+        <!-- Embed readings in a data attribute -->
+        <div id="data-container" data-readings='{{ readings | tojson | safe }}' style="display: none;"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+
+
+    // Show and handle the Y-Axis edit form
+    document.getElementById('edit-yaxis-btn').addEventListener('click', function () {
+        document.getElementById('edit-yaxis-form').style.display = 'block';
+    });
+
+    document.getElementById('yaxis-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const newMax = parseFloat(document.getElementById('new-yaxis-max').value);
+
+        if (newMax > 0) {
+            layout.yaxis.range = [0, newMax];
+            Plotly.relayout('distance-graph', { 'yaxis.range': [0, newMax] });
+        }
+    });
+
+    // Initial trace for the live distance graph    
+    var trace = {
+        x: [],
+        y: [],
+        mode: 'lines',
+        name: 'Distance (cm)',
+        line: { color: 'royalblue', width: 3, shape: 'spline' },
+        fill: 'tozeroy',
+        fillcolor: 'rgba(135, 206, 250, 0.3)'
+    };
+
+    // Layout for the live distance graph
+    var layout = {
+        title: 'Live Distance Monitoring',
+        xaxis: { title: 'Time', type: 'date', tickformat: '%H:%M:%S' },
+        yaxis: { title: 'Distance (cm)', range: [0, 500] },
+        margin: { t: 50, b: 40, l: 50, r: 10 },
+        dragmode: false,
+        staticPlot: false
+    };
+
+    // Create the initial plot
+    Plotly.newPlot('distance-graph', [trace], layout);
+
+    const UPDATE_INTERVAL = 5000;
+    const TIME_WINDOW = 30000;  // Keep the last 30 seconds of data on the graph
+
+    // Update graph with new distance and status
+    function updateGraph(distance, status) {
+        const now = new Date();
+        let color = (status === 'high') ? 'green' : (status === 'moderate') ? 'orange' : 'red';
+        Plotly.restyle('distance-graph', { 'line.color': color }, [0]);
+        Plotly.extendTraces('distance-graph', { x: [[now]], y: [[distance]] }, [0]);
+
+        const pastTime = new Date(now.getTime() - TIME_WINDOW);
+        Plotly.relayout('distance-graph', {
+            'xaxis.range': [pastTime, now]
+        });
+    }
+
+    // Fetch distance data from server
+    function fetchDistanceData() {
+        return fetch('/distance')
+            .then(response => response.json());
+    }
+
+    // Handle the update process
+    function handleUpdate() {
+        fetchDistanceData()
+            .then(data => {
+                updateGraph(data.distance, data.status);
+                document.getElementById('distance').innerText = data.distance;
+                document.getElementById('status').innerText = data.status;
+            });
+    }
+
+    setInterval(handleUpdate, UPDATE_INTERVAL);
+
+    // Event listener for custom date range display
+    document.getElementById('date_range').addEventListener('change', function () {
+        const customRange = document.getElementById('custom-range');
+        customRange.style.display = this.value === 'custom' ? 'block' : 'none';
+    });
+
+    // Retrieve readings from the data attribute
+    const readings = JSON.parse(document.getElementById('data-container').getAttribute('data-readings'));
+    const distances = readings.map(r => r[0]); // Assuming distance is the first element
+    const timestamps = readings.map(r => r[2]); // Use the correctly formatted timestamp
+
+    // Use index values for x-axis
+    const xValues = readings.map((_, index) => index + 1);
+
+    // Initial data for the static graph
+    const initialData = [{
+        x: xValues, // Use index for x-axis
+        y: distances,
+        type: 'scatter',
+        mode: 'lines',
+        text: timestamps.map((timestamp, i) => `Distance: ${distances[i]} cm<br>Time: ${timestamp}`),
+        hoverinfo: 'text',
+        line: {
+            color: 'royalblue',
+            width: 3,
+            shape: 'spline',
+        },
+        fill: 'tozeroy',
+        fillcolor: 'rgba(135, 206, 250, 0.3)'
+    }];
+
+    // Layout for the initial graph
+    const initialLayout = {
+        title: {
+            text: 'Distance Readings Over Time',
+            font: {
+                size: 24,
+                color: 'black'
+            },
+            xref: 'paper',
+            x: 0.05
+        },
+        xaxis: {
+            title: {
+                text: 'Reading Index',
+                font: {
+                    size: 18,
+                    color: 'black'
+                }
+            },
+            showgrid: true,
+            zeroline: false,
+            gridcolor: '#d3d3d3',
+        },
+        yaxis: {
+            title: {
+                text: 'Distance (cm)',
+                font: {
+                    size: 18,
+                    color: 'black'
+                }
+            },
+            showline: true,
+            linecolor: 'black',
+            zeroline: false,
+            gridcolor: '#d3d3d3',
+        },
+        plot_bgcolor: '#f9f9f9',
+        paper_bgcolor: '#ffffff',
+        showlegend: false
+    };
+
+    // Render the initial graph
+    Plotly.newPlot('graph', initialData, initialLayout);
+
+</script>
+
+
+{% endblock %}
